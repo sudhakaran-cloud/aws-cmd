@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# Function to install Redis
+install_redis() {
+    local version=$1
+
+    # Install dependencies
+    sudo yum install -y gcc wget tcl
+
+    # Download Redis
+    echo "Downloading Redis $version..."
+    sudo wget http://download.redis.io/releases/redis-$version.tar.gz
+
+    # Extract Redis to /usr/
+    echo "Extracting Redis $version to /usr/..."
+    sudo tar xvzf redis-$version.tar.gz -C /usr/
+
+    # Remove the downloaded tarball
+    echo "Cleaning up tarball..."
+    sudo rm -f redis-$version.tar.gz
+
+    # Navigate to the Redis directory
+    cd /usr/redis-$version/
+
+    # Build dependencies
+    echo "Building dependencies..."
+    cd deps
+    make hiredis jemalloc linenoise lua geohash-int
+
+    # Compile Redis
+    echo "Compiling Redis..."
+    cd ..
+    make
+    sudo make install
+
+    # Create symbolic links for redis-server and redis-cli
+    echo "Creating symbolic links..."
+    sudo ln -sf /usr/redis-$version/src/redis-server /usr/bin/redis-server
+    sudo ln -sf /usr/redis-$version/src/redis-cli /usr/bin/redis-cli
+
+    # Configure Redis as a systemd service
+    echo "Configuring Redis as a systemd service..."
+    sudo bash -c "cat > /etc/systemd/system/redis.service <<EOF
+[Unit]
+Description=Redis In-Memory Data Store
+After=network.target
+
+[Service]
+User=redis
+Group=redis
+ExecStart=/usr/bin/redis-server /etc/redis/redis.conf
+ExecStop=/usr/bin/redis-cli shutdown
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF"
+
+    # Create Redis user and directories
+    echo "Creating Redis user and directories..."
+    sudo useradd -r -s /bin/false redis
+    sudo mkdir -p /etc/redis /var/lib/redis /var/log/redis
+    sudo chown redis:redis /etc/redis /var/lib/redis /var/log/redis
+    sudo chmod 770 /etc/redis /var/lib/redis /var/log/redis
+
+    # Copy Redis configuration file
+    echo "Copying Redis configuration file..."
+    sudo cp /usr/redis-$version/redis.conf /etc/redis/redis.conf
+
+    # Update Redis configuration
+    echo "Updating Redis configuration..."
+    sudo sed -i 's/^supervised no/supervised systemd/' /etc/redis/redis.conf
+    sudo sed -i 's/^dir \.\//dir \/var\/lib\/redis/' /etc/redis/redis.conf
+    sudo sed -i 's/^logfile ""/logfile \/var\/log\/redis\/redis.log/' /etc/redis/redis.conf
+
+    # Reload systemd and start Redis
+    echo "Starting Redis service..."
+    sudo systemctl daemon-reload
+    sudo systemctl start redis
+    sudo systemctl enable redis
+
+    # Test Redis
+    echo "Testing Redis installation..."
+    sleep 2 # Give Redis time to start
+    redis-cli ping
+
+    echo "Redis $version installed successfully!"
+}
+
+# Prompt user to select Redis version
+echo "Which version of Redis would you like to install?"
+echo "1) Redis 6.2.x"
+echo "2) Redis 7.0.x"
+read -p "Enter your choice (1 or 2): " choice
+
+# Validate user input and install the selected version
+case $choice in
+    1)
+        echo "Installing Redis 6.2.x..."
+        install_redis "6.2.13"  # Replace with the exact version you want to install
+        ;;
+    2)
+        echo "Installing Redis 7.0.x..."
+        install_redis "7.0.10"  # Install Redis 7.0.10
+        ;;
+    *)
+        echo "Invalid choice. Please run the script again and select 1 or 2."
+        exit 1
+        ;;
+esac

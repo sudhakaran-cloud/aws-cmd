@@ -1,0 +1,242 @@
+#!/bin/bash -xe
+ 
+# Update system packages
+sudo yum -y update
+ 
+# Install necessary packages
+sudo yum install -y urw-fonts cronie telnet rsyslog sysstat
+ 
+# Start and enable services
+sudo systemctl start crond.service
+sudo systemctl enable crond.service
+sudo systemctl start rsyslog
+sudo systemctl enable rsyslog
+ 
+# Set timezone to Asia/Kolkata
+sudo timedatectl set-timezone Asia/Kolkata
+ 
+# Configure history timestamps
+echo 'HISTTIMEFORMAT="%Y%m%d %T "' | sudo tee /etc/profile.d/timestamp.sh
+echo 'export HISTTIMEFORMAT="%d/%m/%y %T "' >> ~/.bashrc
+ 
+# Restrict SSH to IPv4
+echo 'AddressFamily inet' | sudo tee -a /etc/ssh/sshd_config
+sudo systemctl restart sshd
+ 
+# Disable IPv6
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+echo 'net.ipv6.conf.default.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+ 
+# Prompt the user to add and format a new EBS volume
+read -p "Do you want to add and format a new EBS volume? (y/n): " add_ebs
+if [ "$add_ebs" == "y" ]; then
+    # Check if the EBS device exists
+    EBS_DEVICE=/dev/nvme1n1
+    if [ -b "$EBS_DEVICE" ]; then
+        sudo parted $EBS_DEVICE mklabel gpt
+        sudo parted $EBS_DEVICE mkpart primary xfs 0% 100%
+        sudo mkfs.xfs ${EBS_DEVICE}p1
+        sudo mkdir -p /mnt/ebs1
+        sudo mount ${EBS_DEVICE}p1 /mnt/ebs1
+        echo "${EBS_DEVICE}p1 /mnt/ebs1 xfs defaults 0 0" | sudo tee -a /etc/fstab
+        echo "EBS volume added and mounted at /mnt/ebs1."
+    else
+        echo "Error: EBS device $EBS_DEVICE not found. Skipping EBS volume addition."
+    fi
+else
+    echo "Skipping EBS volume addition."
+fi
+ 
+# Ask if Java should be installed
+read -p "Do you want to install Java? (y/n): " install_java
+if [ "$install_java" == "y" ]; then
+    # Prompt the user for which Java version to install
+    read -p "Which Java version would you like to install? (11 or 17): " java_version
+ 
+    # Prompt for architecture only if Java installation is selected
+    read -p "Which architecture do you need for Java installation? (aarch64 or x86_64): " architecture
+    # Check if the architecture is valid
+    if [[ "$architecture" != "aarch64" && "$architecture" != "x86_64" ]]; then
+        echo "Invalid architecture. Exiting."
+        exit 1
+    fi
+ 
+    if [ "$java_version" == "11" ]; then
+        if [ "$architecture" == "aarch64" ]; then
+            # Download and install OpenJDK 11 for aarch64
+            wget https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.19+7/OpenJDK11U-jdk_aarch64_linux_hotspot_11.0.19_7.tar.gz
+            tar -xvf OpenJDK11U-jdk_aarch64_linux_hotspot_11.0.19_7.tar.gz -C /opt/
+            tar_dir="/opt/jdk-11.0.19+7"
+        elif [ "$architecture" == "x86_64" ]; then
+            # Download and install OpenJDK 11 for x86_64
+            wget https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.19+7/OpenJDK11U-jdk_x64_linux_hotspot_11.0.19_7.tar.gz
+            tar -xvf OpenJDK11U-jdk_x64_linux_hotspot_11.0.19_7.tar.gz -C /opt/
+            tar_dir="/opt/jdk-11.0.19+7"
+        fi
+    elif [ "$java_version" == "17" ]; then
+        if [ "$architecture" == "aarch64" ]; then
+            # Download and install OpenJDK 17 for aarch64
+            wget https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.7+7/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.7_7.tar.gz
+            tar -xvf OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.7_7.tar.gz -C /opt/
+            tar_dir="/opt/jdk-17.0.7+7"
+        elif [ "$architecture" == "x86_64" ]; then
+            # Download and install OpenJDK 17 for x86_64
+            wget https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.7+7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.7_7.tar.gz
+            tar -xvf OpenJDK17U-jdk_x64_linux_hotspot_17.0.7_7.tar.gz -C /opt/
+            tar_dir="/opt/jdk-17.0.7+7"
+        fi
+    else
+        echo "Invalid Java version. Exiting."
+        exit 1
+    fi
+ 
+    # Check if the directory exists
+    if [ -d "$tar_dir" ]; then
+        if [ "$java_version" == "11" ]; then
+            sudo mkdir -p /opt/java-11
+            sudo mv "$tar_dir" /opt/java-11/
+            sudo alternatives --install /usr/bin/java java /opt/java-11/jdk-11.0.19+7/bin/java 1
+        elif [ "$java_version" == "17" ]; then
+            sudo mkdir -p /opt/java-17
+            sudo mv "$tar_dir" /opt/java-17/
+            sudo alternatives --install /usr/bin/java java /opt/java-17/jdk-17.0.7+7/bin/java 1
+        fi
+    else
+        echo "Error: Directory $tar_dir does not exist. Exiting."
+        exit 1
+    fi
+else
+    echo "Skipping Java installation."
+fi
+ 
+# Configure swap memory
+read -p "Do you want to configure swap memory? (y/n): " configure_swap
+if [ "$configure_swap" == "y" ]; then
+    SWAPFILE=/swapfile
+    sudo dd if=/dev/zero of=$SWAPFILE bs=1M count=20480
+    sudo chmod 600 $SWAPFILE
+    sudo mkswap $SWAPFILE
+    sudo swapon $SWAPFILE
+    # Add swap file entry to /etc/fstab
+    echo "$SWAPFILE swap swap defaults 0 0" | sudo tee -a /etc/fstab
+    echo "Swap memory configured."
+else
+    echo "Skipping swap memory configuration."
+fi
+ 
+# AWS CLI installation prompt
+read -p "Do you want to install AWS CLI? (y/n): " install_cli
+if [ "$install_cli" == "y" ]; then
+    read -p "Which AWS CLI version would you like to install? (x86_64 or aarch64): " cli_architecture
+    if [ "$cli_architecture" == "x86_64" ]; then
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install
+    elif [ "$cli_architecture" == "aarch64" ]; then
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install
+    else
+        echo "Invalid selection. Exiting."
+        exit 1
+    fi
+else
+    echo "Skipping AWS CLI installation."
+fi
+ 
+# Amazon CloudWatch Agent installation prompt
+read -p "Do you want to install CloudWatch Agent? (y/n): " install_cw_agent
+if [ "$install_cw_agent" == "y" ]; then
+    # Install Amazon CloudWatch Agent
+    sudo yum install -y amazon-cloudwatch-agent
+ 
+    # Configure CloudWatch Agent
+    echo '{
+        "agent": {
+            "metrics_collection_interval": 30,
+            "run_as_user": "root"
+        },
+        "metrics": {
+            "aggregation_dimensions": [
+                [
+                    "InstanceId"
+                ]
+            ],
+            "append_dimensions": {
+                "AutoScalingGroupName": "${aws:AutoScalingGroupName}",
+                "ImageId": "${aws:ImageId}",
+                "InstanceId": "${aws:InstanceId}",
+                "InstanceType": "${aws:InstanceType}"
+            },
+            "metrics_collected": {
+                "collectd": {
+                    "metrics_aggregation_interval": 30
+                },
+                "disk": {
+                    "measurement": [
+                        "used_percent",
+                        "inodes_free"
+                    ],
+                    "metrics_collection_interval": 30,
+                    "resources": [
+                        "*"
+                    ]
+                },
+                "diskio": {
+                    "measurement": [
+                        "io_time"
+                    ],
+                    "metrics_collection_interval": 30,
+                    "resources": [
+                        "*"
+                    ]
+                },
+                "mem": {
+                    "measurement": [
+                        "mem_used_percent"
+                    ],
+                    "metrics_collection_interval": 30
+                },
+                "statsd": {
+                    "metrics_aggregation_interval": 30,
+                    "metrics_collection_interval": 10,
+                    "service_address": ":8125"
+                },
+                "swap": {
+                    "measurement": [
+                        "swap_used_percent"
+                    ],
+                    "metrics_collection_interval": 30
+                }
+            }
+        }
+    }' | sudo tee /opt/aws/amazon-cloudwatch-agent/bin/config.json
+ 
+    sudo mkdir -p /usr/share/collectd/
+    sudo touch /usr/share/collectd/types.db
+ 
+    # Start CloudWatch Agent
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -m ec2 -a status
+ 
+    # Enable CloudWatch Agent service
+    sudo systemctl enable amazon-cloudwatch-agent.service
+else
+    echo "Skipping CloudWatch Agent installation."
+fi
+ 
+# Clearcache script prompt
+read -p "Do you want to create a clearcache script? (y/n): " create_clearcache
+if [ "$create_clearcache" == "y" ]; then
+    # Create a clearcache.sh script
+    echo 'sudo echo 3 > /proc/sys/vm/drop_caches && swapoff -a && swapon -a && printf '\''\n%s\n'\'' '\''Ram-cache and Swap Cleared'\''' | sudo tee /home/ec2-user/clearcache.sh
+ 
+    # Set execute permissions on the script
+    sudo chmod +x /home/ec2-user/clearcache.sh
+ 
+    # Add a cron job to run the clearcache.sh script every minute
+    (crontab -l 2>/dev/null; echo "* * * * * sleep 30; cd /home/ec2-user/ && sudo ./clearcache.sh") | sudo crontab -
+else
+    echo "Skipping clearcache script creation."
+fi

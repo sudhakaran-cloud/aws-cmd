@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Define the output file for system details
+OUTPUT_FILE="system_details.txt"
+
+# Function to append a section header to the output file
+append_header() {
+    echo -e "\n=== $1 ===" >> $OUTPUT_FILE
+}
+
+# Collect system details
+append_header "Available Updates"
+sudo yum list updates 2>&1 | sudo tee -a $OUTPUT_FILE
+
+append_header "Disk Usage"
+df -h >> $OUTPUT_FILE
+
+append_header "Load Average"
+cat /proc/loadavg >> $OUTPUT_FILE
+
+append_header "Java Version"
+java -version >> $OUTPUT_FILE 2>&1
+
+append_header "MySQL Version"
+mysql -V >> $OUTPUT_FILE
+
+append_header "OS Release Information"
+cat /etc/os-release >> $OUTPUT_FILE
+
+append_header "System Uptime"
+uptime >> $OUTPUT_FILE
+
+append_header "/etc/passwd (Users with /bin/bash)"
+grep "/bin/bash" /etc/passwd >> $OUTPUT_FILE
+
+append_header "Free Memory (in GB)"
+free -g >> $OUTPUT_FILE
+
+append_header "Cache Clear"
+sudo sh -c "echo 3 > /proc/sys/vm/drop_caches && swapoff -a && swapon -a && printf '\n%s\n' 'Ram-cache and Swap Cleared'" | sudo tee -a $OUTPUT_FILE
+
+# Notify user of completion and output file location
+echo "System details collected and saved to $OUTPUT_FILE."
