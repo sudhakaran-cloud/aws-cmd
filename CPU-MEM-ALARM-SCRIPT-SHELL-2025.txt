@@ -1,0 +1,153 @@
+#CPU
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Normal)-CPU-(172.19.3.114)" \
+    --metric-name "CPUUtilization" \
+    --namespace "AWS/EC2" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 79 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --ok-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=InstanceId,Value=i-09a241d0fa33c8987
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Warning)-CPU-(172.19.3.114)" \
+    --metric-name "CPUUtilization" \
+    --namespace "AWS/EC2" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 80 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=InstanceId,Value=i-09a241d0fa33c8987
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(CRITICAL)-CPU-(172.19.3.114)" \
+    --metric-name "CPUUtilization" \
+    --namespace "AWS/EC2" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 90 \
+    --comparison-operator "GreaterThanOrEqualToThreshold" \
+    --evaluation-periods 1 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=InstanceId,Value=i-09a241d0fa33c8987
+#MEMORY
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Normal)-Memory-(172.19.3.114)" \
+    --metric-name "mem_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 79 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --ok-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=InstanceId,Value=i-09a241d0fa33c8987
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Warning)-Memory-(172.19.3.114)" \
+    --metric-name "mem_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 80 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=InstanceId,Value=i-09a241d0fa33c8987
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(CRITICAL)-Memory-(172.19.3.114)" \
+    --metric-name "mem_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 90 \
+    --comparison-operator "GreaterThanOrEqualToThreshold" \
+    --evaluation-periods 1 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=InstanceId,Value=i-09a241d0fa33c8987
+
+#ROOT
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Normal)-ROOT-DISK-(172.19.3.114)" \
+    --metric-name "disk_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 79 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --ok-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=path,Value="/" Name=InstanceId,Value="i-09a241d0fa33c8987" Name=ImageId,Value="ami-06a6d654ff51c408c" Name=InstanceType,Value="r6g.2xlarge" Name=device,Value="nvme0n1p1" Name=fstype,Value="xfs"
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Warning)-ROOT-DISK-(172.19.3.114)" \
+    --metric-name "disk_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 80 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=path,Value="/" Name=InstanceId,Value="i-09a241d0fa33c8987" Name=ImageId,Value="ami-06a6d654ff51c408c" Name=InstanceType,Value="r6g.2xlarge" Name=device,Value="nvme0n1p1" Name=fstype,Value="xfs"
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(CRITICAL)-ROOT-DISK-(172.19.3.114)" \
+    --metric-name "disk_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 90 \
+    --comparison-operator "GreaterThanOrEqualToThreshold" \
+    --evaluation-periods 1 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=path,Value="/" Name=InstanceId,Value="i-09a241d0fa33c8987" Name=ImageId,Value="ami-06a6d654ff51c408c" Name=InstanceType,Value="r6g.2xlarge" Name=device,Value="nvme0n1p1" Name=fstype,Value="xfs"
+
+#EBS
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Normal)-EBS-DISK-(172.19.3.114)" \
+    --metric-name "disk_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 79 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --ok-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=path,Value="/mnt/ebs1" Name=InstanceId,Value="i-09a241d0fa33c8987" Name=ImageId,Value="ami-06a6d654ff51c408c" Name=InstanceType,Value="r6g.2xlarge" Name=device,Value="nvme1n1p1" Name=fstype,Value="xfs"
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(Warning)-EBS-DISK-(172.19.3.114)" \
+    --metric-name "disk_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 80 \
+    --comparison-operator "GreaterThanThreshold" \
+    --evaluation-periods 2 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=path,Value="/mnt/ebs1" Name=InstanceId,Value="i-09a241d0fa33c8987" Name=ImageId,Value="ami-06a6d654ff51c408c" Name=InstanceType,Value="r6g.2xlarge" Name=device,Value="nvme1n1p1" Name=fstype,Value="xfs"
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(CRITICAL)-EBS-DISK-(172.19.3.114)" \
+    --metric-name "disk_used_percent" \
+    --namespace "CWAgent" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 90 \
+    --comparison-operator "GreaterThanOrEqualToThreshold" \
+    --evaluation-periods 1 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM \
+    --dimensions Name=path,Value="/mnt/ebs1" Name=InstanceId,Value="i-09a241d0fa33c8987" Name=ImageId,Value="ami-06a6d654ff51c408c" Name=InstanceType,Value="r6g.2xlarge" Name=device,Value="nvme1n1p1" Name=fstype,Value="xfs"
+
+#status check
+
+# CRITICAL Alarm: EC2 Status Check "Impaired"
+aws cloudwatch put-metric-alarm \
+    --alarm-name "UAT-PRE-PRD-DB-(CRITICAL)-StatusCheck-(172.19.3.114)" \
+    --metric-name "StatusCheckFailed" \
+    --namespace "AWS/EC2" \
+    --statistic "Average" \
+    --period 300 \
+    --threshold 1 \
+    --comparison-operator "GreaterThanOrEqualToThreshold" \
+    --evaluation-periods 1 \
+    --alarm-actions arn:aws:sns:ap-south-1:396913726602:MARKETPLACE-UAT-ALARM arn:aws:automate:ap-south-1:ec2:reboot \
+    --dimensions Name=InstanceId,Value=i-09a241d0fa33c8987
